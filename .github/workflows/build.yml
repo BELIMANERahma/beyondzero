@@ -1,0 +1,34 @@
+name: Build installers
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt pyinstaller
+      - run: pyinstaller --noconfirm --clean --windowed --name BeyondZero --icon assets/icon.ico --add-data "assets;assets" --collect-all arabic_reshaper --collect-all bidi main.py
+      - run: choco install innosetup -y
+      - run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeyondZero-Windows
+          path: |
+            Output/BeyondZero_Setup.exe
+            dist/BeyondZero
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeyondZero-Android
+          path: ${{ steps.buildozer.outputs.filename }}
